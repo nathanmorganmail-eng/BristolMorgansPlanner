@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
-import { CATEGORIES, CATEGORY_COLOURS } from './categories';
+import { CATEGORIES, categoryColours } from './categories';
 import type { Category } from './categories';
 import type { Event } from './types';
+import type { Theme } from './theme';
 
 interface Props {
   initialDate: string;
+  theme: Theme;
   onClose: () => void;
   onSave: (event: Omit<Event, 'id'>) => void;
 }
 
-export function AddEventModal({ initialDate, onClose, onSave }: Props) {
+export function AddEventModal({ initialDate, theme, onClose, onSave }: Props) {
+  const colours = categoryColours(theme);
   const [date, setDate] = useState(initialDate);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<Category>('All');
@@ -30,40 +33,52 @@ export function AddEventModal({ initialDate, onClose, onSave }: Props) {
     });
   };
 
+  const inputStyle: React.CSSProperties = {
+    background: 'var(--surface-2)',
+    color: 'var(--text)',
+    border: '1px solid var(--border)',
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-end md:items-center justify-center z-50 p-0 md:p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50 p-0 md:p-4"
+      onClick={onClose}
+    >
       <div
-        className="bg-white w-full md:max-w-md md:rounded-lg rounded-t-2xl shadow-xl p-5"
+        className="w-full md:max-w-md md:rounded-lg rounded-t-2xl shadow-xl p-5"
+        style={{ background: 'var(--surface)', color: 'var(--text)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-semibold mb-4">Add event</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Date</label>
+            <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>Date</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2"
+              className="w-full rounded px-3 py-2"
+              style={inputStyle}
               required
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Title</label>
+            <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2"
+              className="w-full rounded px-3 py-2"
+              style={inputStyle}
               autoFocus
               required
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Category</label>
+            <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>Category</label>
             <div className="grid grid-cols-4 gap-2">
               {CATEGORIES.map((c) => {
-                const col = CATEGORY_COLOURS[c];
+                const col = colours[c];
                 const selected = c === category;
                 return (
                   <button
@@ -74,8 +89,10 @@ export function AddEventModal({ initialDate, onClose, onSave }: Props) {
                       background: col.bg,
                       color: col.text,
                       borderColor: selected ? col.border : 'transparent',
+                      outline: selected ? '2px solid var(--text-muted)' : 'none',
+                      outlineOffset: 1,
                     }}
-                    className={`px-2 py-1.5 rounded text-sm border-2 ${selected ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}
+                    className="px-2 py-1.5 rounded text-sm border-2"
                   >
                     {c}
                   </button>
@@ -85,29 +102,35 @@ export function AddEventModal({ initialDate, onClose, onSave }: Props) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Time (optional)</label>
+              <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>Time (optional)</label>
               <input
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2"
+                className="w-full rounded px-3 py-2"
+                style={inputStyle}
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Location (optional)</label>
+              <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>Location (optional)</label>
               <input
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2"
+                className="w-full rounded px-3 py-2"
+                style={inputStyle}
               />
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600">
+            <button type="button" onClick={onClose} className="px-4 py-2" style={{ color: 'var(--text-muted)' }}>
               Cancel
             </button>
-            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            <button
+              type="submit"
+              className="px-4 py-2 rounded"
+              style={{ background: 'var(--primary)', color: 'var(--primary-fg)' }}
+            >
               Add
             </button>
           </div>

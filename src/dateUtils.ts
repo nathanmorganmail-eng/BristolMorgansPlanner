@@ -16,11 +16,9 @@ export function addDays(d: Date, n: number): Date {
   return r;
 }
 
-// Returns array of Saturdays for the year (Jan first Saturday → last Saturday of year)
 export function saturdaysInYear(year: number): Date[] {
   const sats: Date[] = [];
   const d = new Date(year, 0, 1);
-  // advance to first Saturday
   while (d.getDay() !== 6) d.setDate(d.getDate() + 1);
   while (d.getFullYear() === year) {
     sats.push(new Date(d));
@@ -36,4 +34,14 @@ export function monthName(m: number, short = false): string {
 
 export function isInRange(date: string, start: string, end: string): boolean {
   return date >= start && date <= end;
+}
+
+// Returns 'M' | 'T' | 'W' | 'Th' | 'F' for Mon-Fri, or '' for Sat/Sun.
+export function weekdayPrefix(d: Date): string {
+  return ['', 'M', 'T', 'W', 'Th', 'F', ''][d.getDay()];
+}
+
+// For a given Saturday, return the dates of the preceding Mon-Fri (5 days).
+export function weekdaysBefore(saturday: Date): Date[] {
+  return [5, 4, 3, 2, 1].map((n) => addDays(saturday, -n));
 }

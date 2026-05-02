@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg: #FAFAF8;
+  --surface: #FFFFFF;
+  --surface-2: #F4F4F0;
+  --border: #E5E5E0;
+  --text: #1C1917;
+  --text-muted: #6B7280;
+  --primary: #4F46E5;
+  --primary-fg: #FFFFFF;
+  --school-holiday: #FEF3C7;  /* warm yellow */
+  --weekday-prefix: #DC2626;   /* red */
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+}
+
+[data-theme='dark'] {
+  --bg: #0A0A12;
+  --surface: #13131F;
+  --surface-2: #1C1C2E;
+  --border: rgba(255,255,255,0.10);
+  --text: #F1F0FF;
+  --text-muted: #7C7CA0;
+  --primary: #8B5CF6;
+  --primary-fg: #FFFFFF;
+  --school-holiday: rgba(251,191,36,0.18);
+  --weekday-prefix: #F87171;
+  --shadow: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3);
+}
+
 html, body, #root {
   margin: 0;
   padding: 0;
@@ -10,6 +38,6 @@ html, body, #root {
 
 body {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  color: #1a1a1a;
-  background: #fafafa;
+  color: var(--text);
+  background: var(--bg);
 }

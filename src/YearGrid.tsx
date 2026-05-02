@@ -1,17 +1,24 @@
-import { CATEGORY_COLOURS } from './categories';
-import { saturdaysInYear, ymd, addDays, monthName, isInRange } from './dateUtils';
+import { categoryColours } from './categories';
+import { saturdaysInYear, ymd, addDays, monthName, isInRange, weekdaysBefore, weekdayPrefix } from './dateUtils';
 import type { Event, SchoolHoliday } from './types';
+import type { Theme } from './theme';
 
 interface Props {
   year: number;
   events: Event[];
   schoolHolidays: SchoolHoliday[];
+  theme: Theme;
   onAddClick: (date: string) => void;
+  onEventClick: (e: Event) => void;
 }
 
-export function YearGrid({ year, events, schoolHolidays, onAddClick }: Props) {
+interface DisplayEvent extends Event {
+  prefix?: string; // M/T/W/Th/F if a weekday rolled into this weekend
+}
+
+export function YearGrid({ year, events, schoolHolidays, theme, onAddClick, onEventClick }: Props) {
+  const colours = categoryColours(theme);
   const sats = saturdaysInYear(year);
-  // Split into 4 quarters of weeks (~13 weeks each)
   const perQuarter = Math.ceil(sats.length / 4);
   const quarters = [0, 1, 2, 3].map((q) => sats.slice(q * perQuarter, (q + 1) * perQuarter));
 
@@ -20,32 +27,89 @@ export function YearGrid({ year, events, schoolHolidays, onAddClick }: Props) {
     return acc;
   }, {});
 
+  // Build per-Saturday display events: own events + weekday events from preceding Mon-Fri (with prefix).
+  const buildSatDisplay = (sat: Date): DisplayEvent[] => {
+    const own = (eventsByDate[ymd(sat)] ?? []).map((e) => ({ ...e }));
+    const weekday: DisplayEvent[] = [];
+    for (const d of weekdaysBefore(sat)) {
+      const prefix = weekdayPrefix(d);
+      for (const e of eventsByDate[ymd(d)] ?? []) {
+        weekday.push({ ...e, prefix });
+      }
+    }
+    return [...weekday, ...own];
+  };
+
   const isSchoolHoliday = (d: string) => schoolHolidays.some((h) => isInRange(d, h.start, h.end));
 
   return (
     <div className="hidden md:grid grid-cols-4 gap-3 p-3 text-[11px] leading-tight">
       {quarters.map((quarter, qi) => (
-        <div key={qi} className="border border-gray-300 rounded">
-          <div className="grid grid-cols-[auto_1fr_1fr] bg-gray-100 border-b border-gray-300 font-semibold text-gray-700 text-center">
+        <div
+          key={qi}
+          className="rounded overflow-hidden"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        >
+          <div
+            className="grid grid-cols-[2.5rem_1fr_1fr] font-semibold text-center"
+            style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}
+          >
             <div className="px-1 py-1">Wk</div>
             <div className="py-1">Sat</div>
             <div className="py-1">Sun</div>
           </div>
-          {quarter.map((sat) => {
+          {quarter.map((sat, idx) => {
             const sun = addDays(sat, 1);
             const satKey = ymd(sat);
             const sunKey = ymd(sun);
-            const monthLabel = sat.getDate() <= 7 ? monthName(sat.getMonth(), true) : '';
+            const prevSat = idx > 0 ? quarter[idx - 1] : null;
+            const monthChanged = !prevSat || prevSat.getMonth() !== sat.getMonth();
+            const satEvents = buildSatDisplay(sat);
+            const sunEvents = (eventsByDate[sunKey] ?? []).map((e) => ({ ...e } as DisplayEvent));
             return (
               <div
                 key={satKey}
-                className="grid grid-cols-[auto_1fr_1fr] border-t border-gray-200 min-h-[44px]"
+                className="grid grid-cols-[2.5rem_1fr_1fr] min-h-[44px]"
+                style={{
+                  borderTop: monthChanged
+                    ? '2px solid var(--text-muted)'
+                    : '1px solid var(--border)',
+                }}
               >
-                <div className="px-1 py-1 text-gray-500 text-center w-8 border-r border-gray-200 flex items-center justify-center">
-                  {monthLabel || sat.getDate()}
+                <div
+                  className="px-1 py-1 text-center flex flex-col items-center justify-center"
+                  style={{
+                    color: 'var(--text-muted)',
+                    background: monthChanged ? 'var(--surface-2)' : 'transparent',
+                    borderRight: '1px solid var(--border)',
+                  }}
+                >
+                  {monthChanged && (
+                    <div className="font-semibold text-[11px]" style={{ color: 'var(--text)' }}>
+                      {monthName(sat.getMonth(), true)}
+                    </div>
+                  )}
+                  <div className="text-[10px]">{sat.getDate()}</div>
                 </div>
-                <DayCell day={sat} dateKey={satKey} events={eventsByDate[satKey] ?? []} isHoliday={isSchoolHoliday(satKey)} onAddClick={onAddClick} />
-                <DayCell day={sun} dateKey={sunKey} events={eventsByDate[sunKey] ?? []} isHoliday={isSchoolHoliday(sunKey)} onAddClick={onAddClick} />
+                <DayCell
+                  day={sat}
+                  dateKey={satKey}
+                  events={satEvents}
+                  isHoliday={isSchoolHoliday(satKey)}
+                  colours={colours}
+                  onAddClick={onAddClick}
+                  onEventClick={onEventClick}
+                />
+                <DayCell
+                  day={sun}
+                  dateKey={sunKey}
+                  events={sunEvents}
+                  isHoliday={isSchoolHoliday(sunKey)}
+                  colours={colours}
+                  onAddClick={onAddClick}
+                  onEventClick={onEventClick}
+                  isLast
+                />
               </div>
             );
           })}
@@ -60,35 +124,56 @@ function DayCell({
   dateKey,
   events,
   isHoliday,
+  colours,
   onAddClick,
+  onEventClick,
+  isLast,
 }: {
   day: Date;
   dateKey: string;
-  events: Event[];
+  events: DisplayEvent[];
   isHoliday: boolean;
+  colours: ReturnType<typeof categoryColours>;
   onAddClick: (date: string) => void;
+  onEventClick: (e: Event) => void;
+  isLast?: boolean;
 }) {
   return (
-    <button
+    <div
       onClick={() => onAddClick(dateKey)}
-      className={`text-left px-1 py-1 border-r border-gray-200 last:border-r-0 hover:bg-blue-50 transition-colors ${isHoliday ? 'bg-yellow-100' : ''}`}
+      role="button"
+      tabIndex={0}
+      className="text-left px-1 py-1 cursor-pointer hover:opacity-90 transition-opacity"
+      style={{
+        background: isHoliday ? 'var(--school-holiday)' : 'transparent',
+        borderRight: isLast ? 'none' : '1px solid var(--border)',
+      }}
     >
-      <div className="text-gray-400 text-[10px]">{day.getDate()}</div>
+      <div style={{ color: 'var(--text-muted)' }} className="text-[10px]">{day.getDate()}</div>
       <div className="space-y-0.5 mt-0.5">
         {events.map((e) => {
-          const c = CATEGORY_COLOURS[e.category];
+          const c = colours[e.category];
           return (
             <div
               key={e.id}
+              onClick={(ev) => {
+                ev.stopPropagation();
+                onEventClick(e);
+              }}
               style={{ background: c.bg, color: c.text, borderLeft: `2px solid ${c.border}` }}
-              className="px-1 py-0.5 rounded-sm truncate"
-              title={`${e.title}${e.time ? ' · ' + e.time : ''}${e.location ? ' · ' + e.location : ''}`}
+              className="px-1 py-0.5 rounded-sm truncate cursor-pointer hover:brightness-110"
+              title={`${e.prefix ? e.prefix + ' ' : ''}${e.title}${e.time ? ' · ' + e.time : ''}${e.location ? ' · ' + e.location : ''}`}
             >
+              {e.prefix && (
+                <span style={{ color: 'var(--weekday-prefix)' }} className="font-semibold mr-1">
+                  {e.prefix}
+                </span>
+              )}
               {e.title}
             </div>
           );
         })}
       </div>
-    </button>
+    </div>
   );
 }

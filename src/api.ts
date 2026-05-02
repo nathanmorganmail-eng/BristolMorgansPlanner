@@ -71,6 +71,10 @@ export async function fetchSchoolHolidays(): Promise<SchoolHoliday[]> {
   }));
 }
 
+export async function deleteEvent(id: string): Promise<void> {
+  await request(`/api/events?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
 export async function addEvent(e: Omit<Event, 'id'>): Promise<Event> {
   const r = await request<EventRow>('/api/events', {
     method: 'POST',

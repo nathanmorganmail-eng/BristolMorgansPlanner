@@ -24,27 +24,33 @@ export function PasswordGate({ onSuccess }: Props) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: 'var(--bg)' }}
+    >
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-lg shadow-md p-6 w-full max-w-sm space-y-4"
+        className="rounded-lg shadow-md p-6 w-full max-w-sm space-y-4"
+        style={{ background: 'var(--surface)', color: 'var(--text)' }}
       >
         <h1 className="text-xl font-semibold">Weekends</h1>
-        <p className="text-sm text-gray-600">Enter the family password.</p>
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Enter the family password.</p>
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full border border-gray-300 rounded px-3 py-2"
+          className="w-full rounded px-3 py-2"
+          style={{ background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }}
           autoFocus
           autoComplete="current-password"
           required
         />
-        {error && <div className="text-red-600 text-sm">{error}</div>}
+        {error && <div className="text-sm" style={{ color: '#DC2626' }}>{error}</div>}
         <button
           type="submit"
           disabled={loading || !password}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded py-2"
+          className="w-full rounded py-2 disabled:opacity-50"
+          style={{ background: 'var(--primary)', color: 'var(--primary-fg)' }}
         >
           {loading ? 'Checking…' : 'Enter'}
         </button>

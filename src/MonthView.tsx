@@ -1,16 +1,20 @@
 import { useState } from 'react';
-import { CATEGORY_COLOURS } from './categories';
+import { categoryColours } from './categories';
 import { ymd, addDays, monthName, isInRange } from './dateUtils';
 import type { Event, SchoolHoliday } from './types';
+import type { Theme } from './theme';
 
 interface Props {
   year: number;
   events: Event[];
   schoolHolidays: SchoolHoliday[];
+  theme: Theme;
   onAddClick: (date: string) => void;
+  onEventClick: (e: Event) => void;
 }
 
-export function MonthView({ year, events, schoolHolidays, onAddClick }: Props) {
+export function MonthView({ year, events, schoolHolidays, theme, onAddClick, onEventClick }: Props) {
+  const colours = categoryColours(theme);
   const [month, setMonth] = useState(new Date().getFullYear() === year ? new Date().getMonth() : 0);
 
   const eventsByDate = events.reduce<Record<string, Event[]>>((acc, e) => {
@@ -20,7 +24,6 @@ export function MonthView({ year, events, schoolHolidays, onAddClick }: Props) {
 
   const isSchoolHoliday = (d: string) => schoolHolidays.some((h) => isInRange(d, h.start, h.end));
 
-  // Generate all weekend days (+ any weekday with events) for this month
   const first = new Date(year, month, 1);
   const last = new Date(year, month + 1, 0);
   const days: Date[] = [];
@@ -32,18 +35,23 @@ export function MonthView({ year, events, schoolHolidays, onAddClick }: Props) {
 
   return (
     <div className="md:hidden flex flex-col h-full">
-      <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-white sticky top-0 z-10">
+      <div
+        className="flex items-center justify-between p-3 sticky top-0 z-10"
+        style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}
+      >
         <button
           onClick={() => setMonth((m) => (m === 0 ? 11 : m - 1))}
-          className="px-3 py-1 text-2xl text-gray-600"
+          className="px-3 py-1 text-2xl"
+          style={{ color: 'var(--text-muted)' }}
           aria-label="Previous month"
         >
           ‹
         </button>
-        <h2 className="text-lg font-semibold">{monthName(month)} {year}</h2>
+        <h2 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>{monthName(month)} {year}</h2>
         <button
           onClick={() => setMonth((m) => (m === 11 ? 0 : m + 1))}
-          className="px-3 py-1 text-2xl text-gray-600"
+          className="px-3 py-1 text-2xl"
+          style={{ color: 'var(--text-muted)' }}
           aria-label="Next month"
         >
           ›
@@ -56,24 +64,35 @@ export function MonthView({ year, events, schoolHolidays, onAddClick }: Props) {
           const isWeekend = d.getDay() === 6 || d.getDay() === 0;
           const dayLabel = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
           return (
-            <button
+            <div
               key={key}
               onClick={() => onAddClick(key)}
-              className={`w-full text-left flex border-b border-gray-100 ${isSchoolHoliday(key) ? 'bg-yellow-50' : ''} ${isWeekend ? '' : 'opacity-75'}`}
+              className={`w-full text-left flex cursor-pointer ${isWeekend ? '' : 'opacity-75'}`}
+              style={{
+                background: isSchoolHoliday(key) ? 'var(--school-holiday)' : 'transparent',
+                borderBottom: '1px solid var(--border)',
+              }}
             >
-              <div className="w-16 p-3 text-center border-r border-gray-100">
-                <div className="text-xs text-gray-500">{dayLabel}</div>
-                <div className="text-2xl font-light">{d.getDate()}</div>
+              <div
+                className="w-16 p-3 text-center"
+                style={{ borderRight: '1px solid var(--border)' }}
+              >
+                <div style={{ color: 'var(--text-muted)' }} className="text-xs">{dayLabel}</div>
+                <div className="text-2xl font-light" style={{ color: 'var(--text)' }}>{d.getDate()}</div>
               </div>
               <div className="flex-1 p-2 space-y-1 min-h-[60px]">
                 {dayEvents.length === 0 && (
-                  <div className="text-gray-300 text-sm italic">—</div>
+                  <div style={{ color: 'var(--text-muted)' }} className="text-sm italic opacity-50">—</div>
                 )}
                 {dayEvents.map((e) => {
-                  const c = CATEGORY_COLOURS[e.category];
+                  const c = colours[e.category];
                   return (
                     <div
                       key={e.id}
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        onEventClick(e);
+                      }}
                       style={{ background: c.bg, color: c.text, borderLeft: `3px solid ${c.border}` }}
                       className="px-2 py-1 rounded text-sm"
                     >
@@ -82,7 +101,7 @@ export function MonthView({ year, events, schoolHolidays, onAddClick }: Props) {
                   );
                 })}
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

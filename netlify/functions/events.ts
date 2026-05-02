@@ -32,5 +32,14 @@ export default async (req: Request): Promise<Response> => {
     return json(data, 201);
   }
 
+  if (req.method === 'DELETE') {
+    const url = new URL(req.url);
+    const id = url.searchParams.get('id');
+    if (!id) return json({ error: 'Missing id' }, 400);
+    const { error } = await supabase.from('events').delete().eq('id', id);
+    if (error) return json({ error: error.message }, 500);
+    return json({ ok: true });
+  }
+
   return json({ error: 'Method not allowed' }, 405);
 };
