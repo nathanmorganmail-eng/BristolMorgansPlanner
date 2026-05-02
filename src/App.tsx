@@ -8,6 +8,7 @@ import { CategoryLegend } from './CategoryLegend';
 import { ymd } from './dateUtils';
 import { fetchEvents, fetchSchoolHolidays, addEvent, deleteEvent, UnauthorisedError } from './api';
 import { useTheme } from './theme';
+import type { Category } from './categories';
 import type { Event, SchoolHoliday } from './types';
 import './App.css';
 
@@ -19,7 +20,21 @@ export default function App() {
   const [modalDate, setModalDate] = useState<string | null>(null);
   const [viewEvent, setViewEvent] = useState<Event | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<Set<Category>>(new Set());
+  const [showSchoolHolidays, setShowSchoolHolidays] = useState(true);
   const headerRef = useRef<HTMLElement>(null);
+
+  const toggleFilter = (cat: Category) => {
+    setFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
+  const visibleEvents = filter.size === 0 ? events : events.filter((e) => filter.has(e.category));
+  const visibleHolidays = showSchoolHolidays ? schoolHolidays : [];
 
   useEffect(() => {
     if (!headerRef.current) return;
@@ -90,7 +105,14 @@ export default function App() {
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-xl font-semibold">Weekends {displayYear}</h1>
           <div className="hidden md:block flex-1 px-4">
-            <CategoryLegend theme={theme} />
+            <CategoryLegend
+              theme={theme}
+              selected={filter}
+              onToggle={toggleFilter}
+              showSchoolHolidays={showSchoolHolidays}
+              onToggleSchoolHolidays={() => setShowSchoolHolidays((v) => !v)}
+              onClear={() => setFilter(new Set())}
+            />
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -113,7 +135,14 @@ export default function App() {
           </div>
         </div>
         <div className="md:hidden mt-2 overflow-x-auto">
-          <CategoryLegend theme={theme} />
+          <CategoryLegend
+            theme={theme}
+            selected={filter}
+            onToggle={toggleFilter}
+            showSchoolHolidays={showSchoolHolidays}
+            onToggleSchoolHolidays={() => setShowSchoolHolidays((v) => !v)}
+            onClear={() => setFilter(new Set())}
+          />
         </div>
       </header>
       <main className="flex-1">
@@ -127,16 +156,16 @@ export default function App() {
           <>
             <YearGrid
               year={displayYear}
-              events={events}
-              schoolHolidays={schoolHolidays}
+              events={visibleEvents}
+              schoolHolidays={visibleHolidays}
               theme={theme}
               onAddClick={(d) => setModalDate(d)}
               onEventClick={(e) => setViewEvent(e)}
             />
             <MonthView
               year={displayYear}
-              events={events}
-              schoolHolidays={schoolHolidays}
+              events={visibleEvents}
+              schoolHolidays={visibleHolidays}
               theme={theme}
               onAddClick={(d) => setModalDate(d)}
               onEventClick={(e) => setViewEvent(e)}
