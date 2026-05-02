@@ -41,12 +41,10 @@ export function MonthView({ year, events, schoolHolidays, theme, onAddClick, onE
     const sat = new Date(d);
     const sun = addDays(sat, 1);
     const days: Date[] = [];
-    // Look at preceding Mon-Fri
+    // Look at preceding Mon-Fri — only include weekdays that have an event
     for (let n = 5; n >= 1; n--) {
       const wd = addDays(sat, -n);
-      const hasEvt = (eventsByDate[ymd(wd)] ?? []).length > 0;
-      const inHol = isSchoolHoliday(ymd(wd));
-      if (hasEvt || inHol) days.push(wd);
+      if ((eventsByDate[ymd(wd)] ?? []).length > 0) days.push(wd);
     }
     days.push(sat);
     days.push(sun);
@@ -58,7 +56,7 @@ export function MonthView({ year, events, schoolHolidays, theme, onAddClick, onE
   if (firstSat) {
     const orphans: Date[] = [];
     for (let d = new Date(first); d < addDays(firstSat, -5); d = addDays(d, 1)) {
-      if ((eventsByDate[ymd(d)] ?? []).length > 0 || isSchoolHoliday(ymd(d))) orphans.push(new Date(d));
+      if ((eventsByDate[ymd(d)] ?? []).length > 0) orphans.push(new Date(d));
     }
     if (orphans.length) {
       cards.unshift({ weekendStart: orphans[0], days: orphans });
