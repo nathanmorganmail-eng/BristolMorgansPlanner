@@ -7,6 +7,7 @@ export interface Event {
   category: Category;
   time?: string;
   location?: string;
+  link?: string;
 }
 
 export interface SchoolHoliday {

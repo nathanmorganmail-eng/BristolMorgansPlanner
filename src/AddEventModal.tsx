@@ -18,6 +18,7 @@ export function AddEventModal({ initialDate, theme, onClose, onSave }: Props) {
   const [category, setCategory] = useState<Category>('All');
   const [time, setTime] = useState('');
   const [location, setLocation] = useState('');
+  const [link, setLink] = useState('');
 
   useEffect(() => setDate(initialDate), [initialDate]);
 
@@ -30,6 +31,7 @@ export function AddEventModal({ initialDate, theme, onClose, onSave }: Props) {
       category,
       time: time || undefined,
       location: location || undefined,
+      link: link || undefined,
     });
   };
 
@@ -121,6 +123,18 @@ export function AddEventModal({ initialDate, theme, onClose, onSave }: Props) {
                 style={inputStyle}
               />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>Link (optional)</label>
+            <input
+              type="url"
+              inputMode="url"
+              placeholder="https://…"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              className="w-full rounded px-3 py-2"
+              style={inputStyle}
+            />
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose} className="px-4 py-2" style={{ color: 'var(--text-muted)' }}>

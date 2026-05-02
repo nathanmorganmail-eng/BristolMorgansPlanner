@@ -8,6 +8,19 @@ interface EventRow {
   category: Category;
   time: string | null;
   location: string | null;
+  link: string | null;
+}
+
+function rowToEvent(r: EventRow): Event {
+  return {
+    id: r.id,
+    date: r.date,
+    title: r.title,
+    category: r.category,
+    time: r.time ?? undefined,
+    location: r.location ?? undefined,
+    link: r.link ?? undefined,
+  };
 }
 
 interface HolidayRow {
@@ -51,14 +64,7 @@ export async function login(password: string): Promise<void> {
 
 export async function fetchEvents(): Promise<Event[]> {
   const rows = await request<EventRow[]>('/api/events');
-  return rows.map((r) => ({
-    id: r.id,
-    date: r.date,
-    title: r.title,
-    category: r.category,
-    time: r.time ?? undefined,
-    location: r.location ?? undefined,
-  }));
+  return rows.map(rowToEvent);
 }
 
 export async function fetchSchoolHolidays(): Promise<SchoolHoliday[]> {
@@ -81,12 +87,5 @@ export async function addEvent(e: Omit<Event, 'id'>): Promise<Event> {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(e),
   });
-  return {
-    id: r.id,
-    date: r.date,
-    title: r.title,
-    category: r.category,
-    time: r.time ?? undefined,
-    location: r.location ?? undefined,
-  };
+  return rowToEvent(r);
 }

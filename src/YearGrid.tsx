@@ -47,12 +47,17 @@ export function YearGrid({ year, events, schoolHolidays, theme, onAddClick, onEv
       {quarters.map((quarter, qi) => (
         <div
           key={qi}
-          className="rounded overflow-hidden"
+          className="rounded"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
         >
           <div
-            className="grid grid-cols-[2.5rem_1fr_1fr] font-semibold text-center"
-            style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}
+            className="grid grid-cols-[2.5rem_1fr_1fr] font-semibold text-center sticky z-10"
+            style={{
+              top: 'var(--header-h, 56px)',
+              background: 'var(--surface-2)',
+              borderBottom: '1px solid var(--border)',
+              color: 'var(--text-muted)',
+            }}
           >
             <div className="px-1 py-1">Wk</div>
             <div className="py-1">Sat</div>

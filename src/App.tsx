@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { YearGrid } from './YearGrid';
 import { MonthView } from './MonthView';
 import { AddEventModal } from './AddEventModal';
@@ -19,6 +19,19 @@ export default function App() {
   const [modalDate, setModalDate] = useState<string | null>(null);
   const [viewEvent, setViewEvent] = useState<Event | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const update = () => {
+      const h = headerRef.current?.offsetHeight ?? 0;
+      document.documentElement.style.setProperty('--header-h', `${h}px`);
+    };
+    const ro = new ResizeObserver(update);
+    ro.observe(headerRef.current);
+    update();
+    return () => ro.disconnect();
+  }, [authed]);
 
   const today = new Date();
   const displayYear = today.getFullYear() < 2026 ? 2026 : today.getFullYear();
@@ -70,7 +83,8 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <header
-        className="px-4 py-3 sticky top-0 z-20 md:static"
+        ref={headerRef}
+        className="px-4 py-3 sticky top-0 z-30"
         style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}
       >
         <div className="flex items-center justify-between gap-3">
@@ -102,7 +116,7 @@ export default function App() {
           <CategoryLegend theme={theme} />
         </div>
       </header>
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1">
         {error && (
           <div className="p-6 text-center" style={{ color: '#DC2626' }}>
             <div className="font-semibold">Couldn't load data</div>

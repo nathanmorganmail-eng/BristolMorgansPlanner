@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  --header-h: 96px;
   --bg: #FAFAF8;
   --surface: #FFFFFF;
   --surface-2: #F4F4F0;
@@ -40,4 +41,8 @@ body {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
   background: var(--bg);
+}
+
+@media (min-width: 768px) {
+  :root { --header-h: 57px; }
 }

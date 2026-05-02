@@ -16,6 +16,7 @@ export default async (req: Request): Promise<Response> => {
       category: string;
       time?: string | null;
       location?: string | null;
+      link?: string | null;
     };
     const { data, error } = await supabase
       .from('events')
@@ -25,6 +26,7 @@ export default async (req: Request): Promise<Response> => {
         category: body.category,
         time: body.time ?? null,
         location: body.location ?? null,
+        link: body.link ?? null,
       })
       .select()
       .single();

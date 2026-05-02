@@ -7,6 +7,7 @@ create table if not exists events (
   category text not null check (category in ('All','Mum','Dad','Alice','Delilah','Possible','Interest','Holiday')),
   time text,
   location text,
+  link text,
   created_at timestamptz default now()
 );
 

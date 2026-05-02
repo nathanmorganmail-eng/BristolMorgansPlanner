@@ -60,6 +60,20 @@ export function EventModal({ event, theme, onClose, onDelete }: Props) {
             {event.location}
           </div>
         )}
+        {event.link && (
+          <div className="text-sm">
+            <span style={{ color: 'var(--text-muted)' }}>Link: </span>
+            <a
+              href={event.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline break-all"
+              style={{ color: 'var(--primary)' }}
+            >
+              {event.link}
+            </a>
+          </div>
+        )}
         <div className="flex justify-between gap-2 pt-2">
           <button
             onClick={handleDelete}
