@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { categoryColours } from './categories';
 import { ymd, addDays, monthName, isInRange } from './dateUtils';
+import { expandEvents, groupByDate } from './expand';
 import type { Event, SchoolHoliday } from './types';
 import type { Theme } from './theme';
 
@@ -10,53 +11,46 @@ interface Props {
   schoolHolidays: SchoolHoliday[];
   theme: Theme;
   onAddClick: (date: string) => void;
-  onEventClick: (e: Event) => void;
+  onEventClick: (id: string) => void;
 }
 
 interface WeekendCard {
-  weekendStart: Date; // the Saturday
-  days: Date[]; // includes preceding weekday entries (with events) + Sat + Sun
+  weekendStart: Date;
+  days: Date[];
 }
 
 export function MonthView({ year, events, schoolHolidays, theme, onAddClick, onEventClick }: Props) {
   const colours = categoryColours(theme);
   const [month, setMonth] = useState(new Date().getFullYear() === year ? new Date().getMonth() : 0);
 
-  const eventsByDate = events.reduce<Record<string, Event[]>>((acc, e) => {
-    (acc[e.date] ??= []).push(e);
-    return acc;
-  }, {});
+  const byDate = groupByDate(expandEvents(events));
 
   const isSchoolHoliday = (d: string) => schoolHolidays.some((h) => isInRange(d, h.start, h.end));
 
-  // Build cards: each Saturday in this month forms a card with preceding weekdays
-  // (only those with events, OR school-holiday weekdays) + Sat + Sun.
   const first = new Date(year, month, 1);
   const last = new Date(year, month + 1, 0);
 
   const cards: WeekendCard[] = [];
-  // Find all Saturdays in (or relevant to) the month
   for (let d = new Date(first); d <= last; d = addDays(d, 1)) {
     if (d.getDay() !== 6) continue;
     const sat = new Date(d);
     const sun = addDays(sat, 1);
     const days: Date[] = [];
-    // Look at preceding Mon-Fri — only include weekdays that have an event
     for (let n = 5; n >= 1; n--) {
       const wd = addDays(sat, -n);
-      if ((eventsByDate[ymd(wd)] ?? []).length > 0) days.push(wd);
+      if ((byDate[ymd(wd)] ?? []).length > 0) days.push(wd);
     }
     days.push(sat);
     days.push(sun);
     cards.push({ weekendStart: sat, days });
   }
 
-  // Catch any orphan early-month days (before first Saturday) with events — group as a "pre-card"
+  // Catch any orphan early-month days (before first Saturday) with events
   const firstSat = cards[0]?.weekendStart;
   if (firstSat) {
     const orphans: Date[] = [];
     for (let d = new Date(first); d < addDays(firstSat, -5); d = addDays(d, 1)) {
-      if ((eventsByDate[ymd(d)] ?? []).length > 0) orphans.push(new Date(d));
+      if ((byDate[ymd(d)] ?? []).length > 0) orphans.push(new Date(d));
     }
     if (orphans.length) {
       cards.unshift({ weekendStart: orphans[0], days: orphans });
@@ -100,7 +94,7 @@ export function MonthView({ year, events, schoolHolidays, theme, onAddClick, onE
           >
             {card.days.map((d) => {
               const key = ymd(d);
-              const dayEvents = eventsByDate[key] ?? [];
+              const dayEvents = byDate[key] ?? [];
               const isWeekend = d.getDay() === 6 || d.getDay() === 0;
               const dayLabel = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
               return (
@@ -126,18 +120,23 @@ export function MonthView({ year, events, schoolHolidays, theme, onAddClick, onE
                     {dayEvents.length === 0 && (
                       <div style={{ color: 'var(--text-muted)' }} className="text-sm italic opacity-50">—</div>
                     )}
-                    {dayEvents.map((e) => {
+                    {dayEvents.map((e, i) => {
                       const c = colours[e.category];
                       return (
                         <div
-                          key={e.id}
+                          key={`${e.id}-${i}`}
                           onClick={(ev) => {
                             ev.stopPropagation();
-                            onEventClick(e);
+                            onEventClick(e.id);
                           }}
-                          style={{ background: c.bg, color: c.text, borderLeft: `3px solid ${c.border}` }}
+                          style={{
+                            background: c.bg,
+                            color: c.text,
+                            borderLeft: `${e.isMultiDay ? '4px double' : '3px solid'} ${c.border}`,
+                          }}
                           className="px-2 py-1 rounded text-sm"
                         >
+                          {e.isMultiDay && <span className="mr-1 opacity-60">↔</span>}
                           {e.title}
                         </div>
                       );

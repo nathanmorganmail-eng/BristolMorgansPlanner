@@ -160,7 +160,10 @@ export default function App() {
               schoolHolidays={visibleHolidays}
               theme={theme}
               onAddClick={(d) => setModalDate(d)}
-              onEventClick={(e) => setViewEvent(e)}
+              onEventClick={(id) => {
+                const ev = events.find((x) => x.id === id);
+                if (ev) setViewEvent(ev);
+              }}
             />
             <MonthView
               year={displayYear}
@@ -168,7 +171,10 @@ export default function App() {
               schoolHolidays={visibleHolidays}
               theme={theme}
               onAddClick={(d) => setModalDate(d)}
-              onEventClick={(e) => setViewEvent(e)}
+              onEventClick={(id) => {
+                const ev = events.find((x) => x.id === id);
+                if (ev) setViewEvent(ev);
+              }}
             />
           </>
         )}

@@ -1,6 +1,7 @@
 import { categoryColours } from './categories';
 import { saturdaysInYear, ymd, addDays, monthName, isInRange, weekdaysBefore, weekdayPrefix } from './dateUtils';
-import type { Event, SchoolHoliday } from './types';
+import { expandEvents, groupByDate } from './expand';
+import type { DisplayEvent, Event, SchoolHoliday } from './types';
 import type { Theme } from './theme';
 
 interface Props {
@@ -9,10 +10,10 @@ interface Props {
   schoolHolidays: SchoolHoliday[];
   theme: Theme;
   onAddClick: (date: string) => void;
-  onEventClick: (e: Event) => void;
+  onEventClick: (id: string) => void;
 }
 
-interface DisplayEvent extends Event {
+interface RenderEvent extends DisplayEvent {
   prefix?: string; // M/T/W/Th/F if a weekday rolled into this weekend
 }
 
@@ -22,18 +23,15 @@ export function YearGrid({ year, events, schoolHolidays, theme, onAddClick, onEv
   const perQuarter = Math.ceil(sats.length / 4);
   const quarters = [0, 1, 2, 3].map((q) => sats.slice(q * perQuarter, (q + 1) * perQuarter));
 
-  const eventsByDate = events.reduce<Record<string, Event[]>>((acc, e) => {
-    (acc[e.date] ??= []).push(e);
-    return acc;
-  }, {});
+  const byDate = groupByDate(expandEvents(events));
 
   // Build per-Saturday display events: own events + weekday events from preceding Mon-Fri (with prefix).
-  const buildSatDisplay = (sat: Date): DisplayEvent[] => {
-    const own = (eventsByDate[ymd(sat)] ?? []).map((e) => ({ ...e }));
-    const weekday: DisplayEvent[] = [];
+  const buildSatDisplay = (sat: Date): RenderEvent[] => {
+    const own: RenderEvent[] = (byDate[ymd(sat)] ?? []).map((e) => ({ ...e }));
+    const weekday: RenderEvent[] = [];
     for (const d of weekdaysBefore(sat)) {
       const prefix = weekdayPrefix(d);
-      for (const e of eventsByDate[ymd(d)] ?? []) {
+      for (const e of byDate[ymd(d)] ?? []) {
         weekday.push({ ...e, prefix });
       }
     }
@@ -70,7 +68,7 @@ export function YearGrid({ year, events, schoolHolidays, theme, onAddClick, onEv
             const prevSat = idx > 0 ? quarter[idx - 1] : null;
             const monthChanged = !prevSat || prevSat.getMonth() !== sat.getMonth();
             const satEvents = buildSatDisplay(sat);
-            const sunEvents = (eventsByDate[sunKey] ?? []).map((e) => ({ ...e } as DisplayEvent));
+            const sunEvents: RenderEvent[] = (byDate[sunKey] ?? []).map((e) => ({ ...e }));
             return (
               <div
                 key={satKey}
@@ -124,6 +122,13 @@ export function YearGrid({ year, events, schoolHolidays, theme, onAddClick, onEv
   );
 }
 
+function multiDayLabel(e: RenderEvent): string {
+  if (!e.isMultiDay) return '';
+  const total = e.rangeLength ?? 1;
+  const idx = (e.rangeIndex ?? 0) + 1;
+  return `${idx}/${total}`;
+}
+
 function DayCell({
   day,
   dateKey,
@@ -136,11 +141,11 @@ function DayCell({
 }: {
   day: Date;
   dateKey: string;
-  events: DisplayEvent[];
+  events: RenderEvent[];
   isHoliday: boolean;
   colours: ReturnType<typeof categoryColours>;
   onAddClick: (date: string) => void;
-  onEventClick: (e: Event) => void;
+  onEventClick: (id: string) => void;
   isLast?: boolean;
 }) {
   return (
@@ -156,24 +161,29 @@ function DayCell({
     >
       <div style={{ color: 'var(--text-muted)' }} className="text-[10px]">{day.getDate()}</div>
       <div className="space-y-0.5 mt-0.5">
-        {events.map((e) => {
+        {events.map((e, i) => {
           const c = colours[e.category];
           return (
             <div
-              key={e.id}
+              key={`${e.id}-${i}`}
               onClick={(ev) => {
                 ev.stopPropagation();
-                onEventClick(e);
+                onEventClick(e.id);
               }}
-              style={{ background: c.bg, color: c.text, borderLeft: `2px solid ${c.border}` }}
+              style={{
+                background: c.bg,
+                color: c.text,
+                borderLeft: `${e.isMultiDay ? '4px double' : '2px solid'} ${c.border}`,
+              }}
               className="px-1 py-0.5 rounded-sm truncate cursor-pointer hover:brightness-110"
-              title={`${e.prefix ? e.prefix + ' ' : ''}${e.title}${e.time ? ' · ' + e.time : ''}${e.location ? ' · ' + e.location : ''}`}
+              title={`${e.prefix ? e.prefix + ' ' : ''}${e.title}${e.isMultiDay ? ` (day ${multiDayLabel(e)})` : ''}${e.time ? ' · ' + e.time : ''}${e.location ? ' · ' + e.location : ''}`}
             >
               {e.prefix && (
                 <span style={{ color: 'var(--weekday-prefix)' }} className="font-semibold mr-1">
                   {e.prefix}
                 </span>
               )}
+              {e.isMultiDay && <span className="mr-1 opacity-60">↔</span>}
               {e.title}
             </div>
           );

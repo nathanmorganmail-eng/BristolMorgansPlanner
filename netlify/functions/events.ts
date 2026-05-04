@@ -12,6 +12,7 @@ export default async (req: Request): Promise<Response> => {
   if (req.method === 'POST') {
     const body = (await req.json()) as {
       date: string;
+      endDate?: string | null;
       title: string;
       category: string;
       time?: string | null;
@@ -22,6 +23,7 @@ export default async (req: Request): Promise<Response> => {
       .from('events')
       .insert({
         date: body.date,
+        end_date: body.endDate ?? null,
         title: body.title,
         category: body.category,
         time: body.time ?? null,

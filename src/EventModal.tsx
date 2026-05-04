@@ -13,12 +13,16 @@ interface Props {
 export function EventModal({ event, theme, onClose, onDelete }: Props) {
   const colours = categoryColours(theme);
   const c = colours[event.category];
-  const dateLabel = parseYmd(event.date).toLocaleDateString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  const fmt = (s: string) =>
+    parseYmd(s).toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  const dateLabel = event.endDate && event.endDate > event.date
+    ? `${fmt(event.date)} → ${fmt(event.endDate)}`
+    : fmt(event.date);
 
   const handleDelete = () => {
     if (confirm(`Delete "${event.title}"?`)) {

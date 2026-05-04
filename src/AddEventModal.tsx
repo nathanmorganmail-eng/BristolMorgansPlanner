@@ -14,6 +14,7 @@ interface Props {
 export function AddEventModal({ initialDate, theme, onClose, onSave }: Props) {
   const colours = categoryColours(theme);
   const [date, setDate] = useState(initialDate);
+  const [endDate, setEndDate] = useState('');
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<Category>('All');
   const [time, setTime] = useState('');
@@ -25,8 +26,11 @@ export function AddEventModal({ initialDate, theme, onClose, onSave }: Props) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+    // Only treat as multi-day if endDate is set and after start
+    const validEnd = endDate && endDate > date ? endDate : undefined;
     onSave({
       date,
+      endDate: validEnd,
       title: title.trim(),
       category,
       time: time || undefined,
@@ -53,16 +57,29 @@ export function AddEventModal({ initialDate, theme, onClose, onSave }: Props) {
       >
         <h2 className="text-lg font-semibold mb-4">Add event</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
-            <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>Date</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full rounded px-3 py-2"
-              style={inputStyle}
-              required
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>From</label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full rounded px-3 py-2"
+                style={inputStyle}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>To (optional)</label>
+              <input
+                type="date"
+                value={endDate}
+                min={date}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full rounded px-3 py-2"
+                style={inputStyle}
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>Title</label>
@@ -127,7 +144,7 @@ export function AddEventModal({ initialDate, theme, onClose, onSave }: Props) {
           <div>
             <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>Link (optional)</label>
             <input
-              type="url"
+              type="text"
               inputMode="url"
               placeholder="https://…"
               value={link}

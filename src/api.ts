@@ -4,6 +4,7 @@ import type { Category } from './categories';
 interface EventRow {
   id: string;
   date: string;
+  end_date: string | null;
   title: string;
   category: Category;
   time: string | null;
@@ -15,6 +16,7 @@ function rowToEvent(r: EventRow): Event {
   return {
     id: r.id,
     date: r.date,
+    endDate: r.end_date ?? undefined,
     title: r.title,
     category: r.category,
     time: r.time ?? undefined,

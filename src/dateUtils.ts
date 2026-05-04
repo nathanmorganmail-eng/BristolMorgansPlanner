@@ -45,3 +45,12 @@ export function weekdayPrefix(d: Date): string {
 export function weekdaysBefore(saturday: Date): Date[] {
   return [5, 4, 3, 2, 1].map((n) => addDays(saturday, -n));
 }
+
+// Generate every YYYY-MM-DD in [start, end] inclusive.
+export function datesInRange(start: string, end: string): string[] {
+  const out: string[] = [];
+  const s = parseYmd(start);
+  const e = parseYmd(end);
+  for (let d = new Date(s); d <= e; d = addDays(d, 1)) out.push(ymd(d));
+  return out;
+}
