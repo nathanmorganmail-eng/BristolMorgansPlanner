@@ -99,7 +99,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <header
         ref={headerRef}
-        className="px-4 py-3 sticky top-0 z-30"
+        className="app-header px-4 py-3 sticky top-0 z-30"
         style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}
       >
         <div className="flex items-center justify-between gap-3">

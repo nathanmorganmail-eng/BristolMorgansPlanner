@@ -43,6 +43,13 @@ body {
   background: var(--bg);
 }
 
+/* iOS PWA: the app header pushes its own content below the notch. The
+   --header-h ResizeObserver picks up the extra padding automatically so
+   downstream sticky offsets stay correct. */
+header.app-header {
+  padding-top: calc(0.75rem + env(safe-area-inset-top));
+}
+
 @media (min-width: 768px) {
   :root { --header-h: 57px; }
 }
