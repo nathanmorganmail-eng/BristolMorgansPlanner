@@ -6,22 +6,26 @@ import type { Theme } from './theme';
 
 interface Props {
   initialDate: string;
+  initialEvent?: Event;
   theme: Theme;
   onClose: () => void;
   onSave: (event: Omit<Event, 'id'>) => void;
 }
 
-export function AddEventModal({ initialDate, theme, onClose, onSave }: Props) {
+export function AddEventModal({ initialDate, initialEvent, theme, onClose, onSave }: Props) {
   const colours = categoryColours(theme);
-  const [date, setDate] = useState(initialDate);
-  const [endDate, setEndDate] = useState('');
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<Category>('All');
-  const [time, setTime] = useState('');
-  const [location, setLocation] = useState('');
-  const [link, setLink] = useState('');
+  const isEdit = !!initialEvent;
+  const [date, setDate] = useState(initialEvent?.date ?? initialDate);
+  const [endDate, setEndDate] = useState(initialEvent?.endDate ?? '');
+  const [title, setTitle] = useState(initialEvent?.title ?? '');
+  const [category, setCategory] = useState<Category>(initialEvent?.category ?? 'All');
+  const [time, setTime] = useState(initialEvent?.time ?? '');
+  const [location, setLocation] = useState(initialEvent?.location ?? '');
+  const [link, setLink] = useState(initialEvent?.link ?? '');
 
-  useEffect(() => setDate(initialDate), [initialDate]);
+  useEffect(() => {
+    if (!initialEvent) setDate(initialDate);
+  }, [initialDate, initialEvent]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +59,7 @@ export function AddEventModal({ initialDate, theme, onClose, onSave }: Props) {
         style={{ background: 'var(--surface)', color: 'var(--text)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-semibold mb-4">Add event</h2>
+        <h2 className="text-lg font-semibold mb-4">{isEdit ? 'Edit event' : 'Add event'}</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -108,8 +112,9 @@ export function AddEventModal({ initialDate, theme, onClose, onSave }: Props) {
                       background: col.bg,
                       color: col.text,
                       borderColor: selected ? col.border : 'transparent',
-                      outline: selected ? '2px solid var(--text-muted)' : 'none',
-                      outlineOffset: 1,
+                      outline: selected ? '3px solid var(--text)' : 'none',
+                      outlineOffset: 2,
+                      fontWeight: selected ? 700 : 400,
                     }}
                     className="px-2 py-1.5 rounded text-sm border-2"
                   >
@@ -162,7 +167,7 @@ export function AddEventModal({ initialDate, theme, onClose, onSave }: Props) {
               className="px-4 py-2 rounded"
               style={{ background: 'var(--primary)', color: 'var(--primary-fg)' }}
             >
-              Add
+              {isEdit ? 'Save' : 'Add'}
             </button>
           </div>
         </form>

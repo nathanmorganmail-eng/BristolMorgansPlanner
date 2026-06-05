@@ -8,9 +8,10 @@ interface Props {
   theme: Theme;
   onClose: () => void;
   onDelete: (id: string) => void;
+  onEdit: (event: Event) => void;
 }
 
-export function EventModal({ event, theme, onClose, onDelete }: Props) {
+export function EventModal({ event, theme, onClose, onDelete, onEdit }: Props) {
   const colours = categoryColours(theme);
   const c = colours[event.category];
   const fmt = (s: string) =>
@@ -86,13 +87,22 @@ export function EventModal({ event, theme, onClose, onDelete }: Props) {
           >
             Delete
           </button>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded text-sm"
-            style={{ background: 'var(--primary)', color: 'var(--primary-fg)' }}
-          >
-            Close
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => onEdit(event)}
+              className="px-4 py-2 rounded text-sm"
+              style={{ border: '1px solid var(--border)', color: 'var(--text)' }}
+            >
+              Edit
+            </button>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 rounded text-sm"
+              style={{ background: 'var(--primary)', color: 'var(--primary-fg)' }}
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>

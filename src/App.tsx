@@ -6,7 +6,7 @@ import { EventModal } from './EventModal';
 import { PasswordGate } from './PasswordGate';
 import { CategoryLegend } from './CategoryLegend';
 import { ymd } from './dateUtils';
-import { fetchEvents, fetchSchoolHolidays, addEvent, deleteEvent, UnauthorisedError } from './api';
+import { fetchEvents, fetchSchoolHolidays, addEvent, updateEvent, deleteEvent, UnauthorisedError } from './api';
 import { useTheme } from './theme';
 import type { Category } from './categories';
 import type { Event, SchoolHoliday } from './types';
@@ -18,6 +18,7 @@ export default function App() {
   const [events, setEvents] = useState<Event[]>([]);
   const [schoolHolidays, setSchoolHolidays] = useState<SchoolHoliday[]>([]);
   const [modalDate, setModalDate] = useState<string | null>(null);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [viewEvent, setViewEvent] = useState<Event | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Set<Category>>(new Set());
@@ -73,9 +74,15 @@ export default function App() {
 
   const handleSave = async (e: Omit<Event, 'id'>) => {
     try {
-      const saved = await addEvent(e);
-      setEvents((prev) => [...prev, saved]);
-      setModalDate(null);
+      if (editingEvent) {
+        const saved = await updateEvent(editingEvent.id, e);
+        setEvents((prev) => prev.map((x) => (x.id === saved.id ? saved : x)));
+        setEditingEvent(null);
+      } else {
+        const saved = await addEvent(e);
+        setEvents((prev) => [...prev, saved]);
+        setModalDate(null);
+      }
     } catch (err) {
       alert(`Failed to save: ${(err as Error).message}`);
     }
@@ -179,11 +186,20 @@ export default function App() {
           </>
         )}
       </main>
-      {modalDate && (
+      {modalDate && !editingEvent && (
         <AddEventModal
           initialDate={modalDate}
           theme={theme}
           onClose={() => setModalDate(null)}
+          onSave={handleSave}
+        />
+      )}
+      {editingEvent && (
+        <AddEventModal
+          initialDate={editingEvent.date}
+          initialEvent={editingEvent}
+          theme={theme}
+          onClose={() => setEditingEvent(null)}
           onSave={handleSave}
         />
       )}
@@ -193,6 +209,10 @@ export default function App() {
           theme={theme}
           onClose={() => setViewEvent(null)}
           onDelete={handleDelete}
+          onEdit={(ev) => {
+            setViewEvent(null);
+            setEditingEvent(ev);
+          }}
         />
       )}
     </div>

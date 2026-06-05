@@ -91,3 +91,12 @@ export async function addEvent(e: Omit<Event, 'id'>): Promise<Event> {
   });
   return rowToEvent(r);
 }
+
+export async function updateEvent(id: string, e: Omit<Event, 'id'>): Promise<Event> {
+  const r = await request<EventRow>(`/api/events?id=${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(e),
+  });
+  return rowToEvent(r);
+}
