@@ -97,6 +97,7 @@ export function MonthView({ year, events, schoolHolidays, theme, onAddClick, onE
               const dayEvents = byDate[key] ?? [];
               const isWeekend = d.getDay() === 6 || d.getDay() === 0;
               const dayLabel = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
+              const compact = dayEvents.length <= 1;
               return (
                 <div
                   key={key}
@@ -108,17 +109,25 @@ export function MonthView({ year, events, schoolHolidays, theme, onAddClick, onE
                   }}
                 >
                   <div
-                    className="w-16 p-3 text-center"
+                    className={`text-center ${compact ? 'w-14 px-2 py-1 flex items-center justify-center gap-1.5' : 'w-16 p-3'}`}
                     style={{ borderRight: '1px solid var(--border)' }}
                   >
-                    <div style={{ color: isWeekend ? 'var(--text-muted)' : 'var(--weekday-prefix)' }} className="text-xs font-semibold">
+                    <div
+                      style={{ color: isWeekend ? 'var(--text-muted)' : 'var(--weekday-prefix)' }}
+                      className={compact ? 'text-[11px] font-semibold' : 'text-xs font-semibold'}
+                    >
                       {dayLabel}
                     </div>
-                    <div className="text-2xl font-light" style={{ color: 'var(--text)' }}>{d.getDate()}</div>
+                    <div
+                      className={compact ? 'text-base font-medium' : 'text-2xl font-light'}
+                      style={{ color: 'var(--text)' }}
+                    >
+                      {d.getDate()}
+                    </div>
                   </div>
-                  <div className="flex-1 p-2 space-y-1 min-h-[60px]">
+                  <div className={`flex-1 space-y-1 ${compact ? 'px-2 py-1 min-h-0 flex items-center' : 'p-2 min-h-[60px]'}`}>
                     {dayEvents.length === 0 && (
-                      <div style={{ color: 'var(--text-muted)' }} className="text-sm italic opacity-50">—</div>
+                      <div style={{ color: 'var(--text-muted)' }} className="text-xs italic opacity-40">—</div>
                     )}
                     {dayEvents.map((e, i) => {
                       const c = colours[e.category];
@@ -134,7 +143,7 @@ export function MonthView({ year, events, schoolHolidays, theme, onAddClick, onE
                             color: c.text,
                             borderLeft: `${e.isMultiDay ? '4px double' : '3px solid'} ${c.border}`,
                           }}
-                          className="px-2 py-1 rounded text-sm"
+                          className={`rounded ${compact ? 'px-2 py-0.5 text-xs w-full' : 'px-2 py-1 text-sm'}`}
                         >
                           {e.isMultiDay && <span className="mr-1 opacity-60">↔</span>}
                           {e.title}

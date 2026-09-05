@@ -96,14 +96,25 @@ export function IcePage({ going, onToggleGoing }: Props) {
         </span>
       </div>
       <div
-        className="rounded overflow-x-auto"
-        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        className="rounded overflow-auto"
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          maxHeight: 'calc(100vh - var(--header-h, 56px) - 180px)',
+        }}
       >
         <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: 'var(--surface-2)', color: 'var(--text-muted)' }}>
+            <tr style={{ color: 'var(--text-muted)' }}>
               {['Day', 'Date', 'Time', 'Who', 'Vs', 'H/A', 'Postcode', 'Miles', 'Drive', 'Y'].map((h) => (
-                <th key={h} className="text-left px-2 py-1.5 font-semibold uppercase tracking-wide text-[10px]">
+                <th
+                  key={h}
+                  className="text-left px-2 py-1.5 font-semibold uppercase tracking-wide text-[10px] sticky top-0 z-10"
+                  style={{
+                    background: 'var(--surface-2)',
+                    borderBottom: '1px solid var(--border)',
+                  }}
+                >
                   {h}
                 </th>
               ))}
