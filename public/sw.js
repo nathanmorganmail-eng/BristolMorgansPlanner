@@ -1,6 +1,8 @@
 // Minimal service worker: cache the app shell so the calendar opens
-// offline (data still needs network). Bump CACHE_VERSION when shipping.
-const CACHE_VERSION = 'wk-v1';
+// offline (data still needs network). The hash below is rewritten by
+// the netlify build (post-build script), so each deploy gets a fresh
+// cache key — old caches are dropped in the activate handler.
+const CACHE_VERSION = 'wk-__BUILD_ID__';
 const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (event) => {
