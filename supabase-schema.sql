@@ -29,6 +29,11 @@ create table if not exists birthdays (
 
 create index if not exists birthdays_md_idx on birthdays(md);
 
+create table if not exists ice_going (
+  fixture_key text primary key,
+  created_at timestamptz default now()
+);
+
 -- RLS on, no public policies. Only the service_role key (used server-side
 -- in Netlify Functions) can read/write. The publishable key in the browser
 -- can do nothing — all data access goes through /api routes that check
@@ -36,6 +41,7 @@ create index if not exists birthdays_md_idx on birthdays(md);
 alter table events enable row level security;
 alter table school_holidays enable row level security;
 alter table birthdays enable row level security;
+alter table ice_going enable row level security;
 
 -- Seed school holidays for 2026 (English term dates)
 insert into school_holidays (start_date, end_date, label) values

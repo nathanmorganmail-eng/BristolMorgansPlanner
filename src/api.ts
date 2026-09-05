@@ -122,3 +122,19 @@ export async function addBirthday(name: string, md: string): Promise<Birthday> {
 export async function deleteBirthday(id: string): Promise<void> {
   await request(`/api/birthdays?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
+
+export async function fetchIceGoing(): Promise<string[]> {
+  return request<string[]>('/api/ice_going');
+}
+
+export async function setIceGoing(key: string): Promise<void> {
+  await request('/api/ice_going', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ key }),
+  });
+}
+
+export async function unsetIceGoing(key: string): Promise<void> {
+  await request(`/api/ice_going?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
+}

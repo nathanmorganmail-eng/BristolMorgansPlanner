@@ -4,6 +4,14 @@
 export type Team = 'SD' | 'Pups';
 export type HomeAway = 'Home' | 'Away';
 
+export const fixtureKey = (f: { date: string; team: string; vs: string; ha: string }) =>
+  `${f.date}|${f.team}|${f.vs}|${f.ha}`;
+
+export const shortTitle = (f: { team: Team; ha: HomeAway }) => {
+  if (f.team === 'SD') return f.ha === 'Home' ? 'SdH' : 'SdA';
+  return f.ha === 'Home' ? 'PupH' : 'PupA';
+};
+
 export interface Fixture {
   day: string;      // Sun, Sat
   date: string;     // YYYY-MM-DD

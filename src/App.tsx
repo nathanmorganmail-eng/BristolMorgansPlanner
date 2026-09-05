@@ -12,12 +12,16 @@ import {
   fetchEvents,
   fetchSchoolHolidays,
   fetchBirthdays,
+  fetchIceGoing,
+  setIceGoing,
+  unsetIceGoing,
   addEvent,
   updateEvent,
   deleteEvent,
   UnauthorisedError,
   type Birthday,
 } from './api';
+import { FIXTURES, fixtureKey, shortTitle } from './iceFixtures';
 import { useTheme } from './theme';
 import type { Category } from './categories';
 import type { Event, SchoolHoliday } from './types';
@@ -37,6 +41,7 @@ export default function App() {
   const [events, setEvents] = useState<Event[]>([]);
   const [schoolHolidays, setSchoolHolidays] = useState<SchoolHoliday[]>([]);
   const [birthdays, setBirthdays] = useState<Birthday[]>([]);
+  const [going, setGoing] = useState<Set<string>>(new Set());
   const [modalDate, setModalDate] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [viewEvent, setViewEvent] = useState<Event | null>(null);
@@ -86,7 +91,20 @@ export default function App() {
     return out;
   }, [birthdays, displayYear]);
 
-  const allEvents = useMemo(() => [...events, ...birthdayEvents], [events, birthdayEvents]);
+  const iceEvents: Event[] = useMemo(() => {
+    return FIXTURES.filter((f) => going.has(fixtureKey(f))).map((f) => ({
+      id: `ice-${fixtureKey(f)}`,
+      date: f.date,
+      title: shortTitle(f),
+      category: 'Delilah',
+      time: f.time,
+    }));
+  }, [going]);
+
+  const allEvents = useMemo(
+    () => [...events, ...birthdayEvents, ...iceEvents],
+    [events, birthdayEvents, iceEvents],
+  );
   const visibleEvents = filter.size === 0 ? allEvents : allEvents.filter((e) => filter.has(e.category));
   const visibleHolidays = showSchoolHolidays ? schoolHolidays : [];
 
@@ -103,11 +121,12 @@ export default function App() {
   }, [authed]);
 
   const loadData = () =>
-    Promise.all([fetchEvents(), fetchSchoolHolidays(), fetchBirthdays()])
-      .then(([ev, hol, bd]) => {
+    Promise.all([fetchEvents(), fetchSchoolHolidays(), fetchBirthdays(), fetchIceGoing()])
+      .then(([ev, hol, bd, ig]) => {
         setEvents(ev);
         setSchoolHolidays(hol);
         setBirthdays(bd);
+        setGoing(new Set(ig));
         setAuthed(true);
       })
       .catch((e) => {
@@ -150,10 +169,32 @@ export default function App() {
   };
 
   const onEventClick = (id: string) => {
-    // Birthdays are synthetic; don't open the event modal for them.
-    if (id.startsWith('bday-')) return;
+    // Birthdays and ice fixtures are synthetic; not real events.
+    if (id.startsWith('bday-') || id.startsWith('ice-')) return;
     const ev = events.find((x) => x.id === id);
     if (ev) setViewEvent(ev);
+  };
+
+  const toggleGoing = async (key: string) => {
+    const willBe = !going.has(key);
+    setGoing((prev) => {
+      const next = new Set(prev);
+      if (willBe) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+    try {
+      if (willBe) await setIceGoing(key);
+      else await unsetIceGoing(key);
+    } catch (err) {
+      alert(`Failed: ${(err as Error).message}`);
+      setGoing((prev) => {
+        const next = new Set(prev);
+        if (willBe) next.delete(key);
+        else next.add(key);
+        return next;
+      });
+    }
   };
 
   if (authed === null)
@@ -252,7 +293,7 @@ export default function App() {
             />
           </>
         )}
-        {!error && page === 'ice' && <IcePage />}
+        {!error && page === 'ice' && <IcePage going={going} onToggleGoing={toggleGoing} />}
         {!error && page === 'bday' && <BdayPage birthdays={birthdays} onChange={setBirthdays} />}
       </main>
       {modalDate && !editingEvent && (
