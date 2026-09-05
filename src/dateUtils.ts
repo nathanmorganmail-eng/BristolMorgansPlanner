@@ -27,6 +27,30 @@ export function saturdaysInYear(year: number): Date[] {
   return sats;
 }
 
+export function currentQuarterStart(today = new Date()): Date {
+  const q = Math.floor(today.getMonth() / 3);
+  return new Date(today.getFullYear(), q * 3, 1);
+}
+
+// 4 quarters of Saturdays starting at quarterStart. Each quarter is the
+// Saturdays whose date falls inside that 3-month calendar span.
+export function rollingQuarters(quarterStart: Date): Date[][] {
+  const quarters: Date[][] = [];
+  for (let qi = 0; qi < 4; qi++) {
+    const qStart = new Date(quarterStart.getFullYear(), quarterStart.getMonth() + qi * 3, 1);
+    const qEnd = new Date(quarterStart.getFullYear(), quarterStart.getMonth() + qi * 3 + 3, 0);
+    const sats: Date[] = [];
+    const d = new Date(qStart);
+    while (d.getDay() !== 6) d.setDate(d.getDate() + 1);
+    while (d <= qEnd) {
+      sats.push(new Date(d));
+      d.setDate(d.getDate() + 7);
+    }
+    quarters.push(sats);
+  }
+  return quarters;
+}
+
 export function monthName(m: number, short = false): string {
   const names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   return short ? names[m].slice(0, 3) : names[m];

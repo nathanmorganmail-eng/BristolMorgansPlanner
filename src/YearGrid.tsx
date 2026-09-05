@@ -1,11 +1,10 @@
 import { categoryColours } from './categories';
-import { saturdaysInYear, ymd, addDays, monthName, isInRange, weekdaysBefore, weekdayPrefix } from './dateUtils';
+import { rollingQuarters, currentQuarterStart, ymd, addDays, monthName, isInRange, weekdaysBefore, weekdayPrefix } from './dateUtils';
 import { expandEvents, groupByDate } from './expand';
 import type { DisplayEvent, Event, SchoolHoliday } from './types';
 import type { Theme } from './theme';
 
 interface Props {
-  year: number;
   events: Event[];
   schoolHolidays: SchoolHoliday[];
   theme: Theme;
@@ -17,11 +16,10 @@ interface RenderEvent extends DisplayEvent {
   prefix?: string; // M/T/W/Th/F if a weekday rolled into this weekend
 }
 
-export function YearGrid({ year, events, schoolHolidays, theme, onAddClick, onEventClick }: Props) {
+export function YearGrid({ events, schoolHolidays, theme, onAddClick, onEventClick }: Props) {
   const colours = categoryColours(theme);
-  const sats = saturdaysInYear(year);
-  const perQuarter = Math.ceil(sats.length / 4);
-  const quarters = [0, 1, 2, 3].map((q) => sats.slice(q * perQuarter, (q + 1) * perQuarter));
+  const qStart = currentQuarterStart();
+  const quarters = rollingQuarters(qStart);
 
   const byDate = groupByDate(expandEvents(events));
 
@@ -67,6 +65,7 @@ export function YearGrid({ year, events, schoolHolidays, theme, onAddClick, onEv
             const sunKey = ymd(sun);
             const prevSat = idx > 0 ? quarter[idx - 1] : null;
             const monthChanged = !prevSat || prevSat.getMonth() !== sat.getMonth();
+            const yearChanged = !prevSat || prevSat.getFullYear() !== sat.getFullYear();
             const satEvents = buildSatDisplay(sat);
             const sunEvents: RenderEvent[] = (byDate[sunKey] ?? []).map((e) => ({ ...e }));
             return (
@@ -90,6 +89,9 @@ export function YearGrid({ year, events, schoolHolidays, theme, onAddClick, onEv
                   {monthChanged && (
                     <div className="font-semibold text-[11px]" style={{ color: 'var(--text)' }}>
                       {monthName(sat.getMonth(), true)}
+                      {yearChanged && (
+                        <span className="ml-0.5 opacity-70">'{String(sat.getFullYear()).slice(2)}</span>
+                      )}
                     </div>
                   )}
                   <div className="text-[10px]">{sat.getDate()}</div>

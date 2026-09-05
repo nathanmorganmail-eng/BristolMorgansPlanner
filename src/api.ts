@@ -100,3 +100,25 @@ export async function updateEvent(id: string, e: Omit<Event, 'id'>): Promise<Eve
   });
   return rowToEvent(r);
 }
+
+export interface Birthday {
+  id: string;
+  name: string;
+  md: string; // MM-DD
+}
+
+export async function fetchBirthdays(): Promise<Birthday[]> {
+  return request<Birthday[]>('/api/birthdays');
+}
+
+export async function addBirthday(name: string, md: string): Promise<Birthday> {
+  return request<Birthday>('/api/birthdays', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name, md }),
+  });
+}
+
+export async function deleteBirthday(id: string): Promise<void> {
+  await request(`/api/birthdays?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+}

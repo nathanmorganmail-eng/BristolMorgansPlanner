@@ -20,12 +20,22 @@ create table if not exists school_holidays (
   label text not null
 );
 
+create table if not exists birthdays (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  md text not null check (md ~ '^\d{2}-\d{2}$'),
+  created_at timestamptz default now()
+);
+
+create index if not exists birthdays_md_idx on birthdays(md);
+
 -- RLS on, no public policies. Only the service_role key (used server-side
 -- in Netlify Functions) can read/write. The publishable key in the browser
 -- can do nothing — all data access goes through /api routes that check
 -- the password cookie first.
 alter table events enable row level security;
 alter table school_holidays enable row level security;
+alter table birthdays enable row level security;
 
 -- Seed school holidays for 2026 (English term dates)
 insert into school_holidays (start_date, end_date, label) values

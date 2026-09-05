@@ -67,12 +67,6 @@ export function CategoryLegend({
       >
         School holiday
       </button>
-      <span
-        className="text-[11px] px-2 py-0.5 rounded"
-        style={{ color: 'var(--weekday-prefix)', border: '1px dashed var(--weekday-prefix)' }}
-      >
-        M/T/W/Th/F = weekday
-      </span>
       {filterActive && (
         <button
           type="button"

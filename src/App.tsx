@@ -1,29 +1,61 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { YearGrid } from './YearGrid';
 import { MonthView } from './MonthView';
 import { AddEventModal } from './AddEventModal';
 import { EventModal } from './EventModal';
 import { PasswordGate } from './PasswordGate';
 import { CategoryLegend } from './CategoryLegend';
+import { IcePage } from './IcePage';
+import { BdayPage } from './BdayPage';
 import { ymd } from './dateUtils';
-import { fetchEvents, fetchSchoolHolidays, addEvent, updateEvent, deleteEvent, UnauthorisedError } from './api';
+import {
+  fetchEvents,
+  fetchSchoolHolidays,
+  fetchBirthdays,
+  addEvent,
+  updateEvent,
+  deleteEvent,
+  UnauthorisedError,
+  type Birthday,
+} from './api';
 import { useTheme } from './theme';
 import type { Category } from './categories';
 import type { Event, SchoolHoliday } from './types';
 import './App.css';
+
+type Page = 'calendar' | 'ice' | 'bday';
+
+const pageFromHash = (): Page => {
+  const h = window.location.hash.replace('#', '');
+  if (h === 'ice' || h === 'bday') return h;
+  return 'calendar';
+};
 
 export default function App() {
   const [theme, toggleTheme] = useTheme();
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [schoolHolidays, setSchoolHolidays] = useState<SchoolHoliday[]>([]);
+  const [birthdays, setBirthdays] = useState<Birthday[]>([]);
   const [modalDate, setModalDate] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [viewEvent, setViewEvent] = useState<Event | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Set<Category>>(new Set());
   const [showSchoolHolidays, setShowSchoolHolidays] = useState(true);
+  const [page, setPage] = useState<Page>(pageFromHash());
   const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const onHash = () => setPage(pageFromHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  const goto = (p: Page) => {
+    window.location.hash = p === 'calendar' ? '' : p;
+    setPage(p);
+  };
 
   const toggleFilter = (cat: Category) => {
     setFilter((prev) => {
@@ -34,7 +66,28 @@ export default function App() {
     });
   };
 
-  const visibleEvents = filter.size === 0 ? events : events.filter((e) => filter.has(e.category));
+  const today = new Date();
+  const displayYear = today.getFullYear() < 2026 ? 2026 : today.getFullYear();
+
+  // Materialise birthdays into events for the visible year range (current year and next).
+  const birthdayEvents: Event[] = useMemo(() => {
+    const years = [displayYear, displayYear + 1];
+    const out: Event[] = [];
+    for (const b of birthdays) {
+      for (const y of years) {
+        out.push({
+          id: `bday-${b.id}-${y}`,
+          date: `${y}-${b.md}`,
+          title: `🎂 ${b.name}`,
+          category: 'All',
+        });
+      }
+    }
+    return out;
+  }, [birthdays, displayYear]);
+
+  const allEvents = useMemo(() => [...events, ...birthdayEvents], [events, birthdayEvents]);
+  const visibleEvents = filter.size === 0 ? allEvents : allEvents.filter((e) => filter.has(e.category));
   const visibleHolidays = showSchoolHolidays ? schoolHolidays : [];
 
   useEffect(() => {
@@ -49,14 +102,12 @@ export default function App() {
     return () => ro.disconnect();
   }, [authed]);
 
-  const today = new Date();
-  const displayYear = today.getFullYear() < 2026 ? 2026 : today.getFullYear();
-
   const loadData = () =>
-    Promise.all([fetchEvents(), fetchSchoolHolidays()])
-      .then(([ev, hol]) => {
+    Promise.all([fetchEvents(), fetchSchoolHolidays(), fetchBirthdays()])
+      .then(([ev, hol, bd]) => {
         setEvents(ev);
         setSchoolHolidays(hol);
+        setBirthdays(bd);
         setAuthed(true);
       })
       .catch((e) => {
@@ -98,6 +149,13 @@ export default function App() {
     }
   };
 
+  const onEventClick = (id: string) => {
+    // Birthdays are synthetic; don't open the event modal for them.
+    if (id.startsWith('bday-')) return;
+    const ev = events.find((x) => x.id === id);
+    if (ev) setViewEvent(ev);
+  };
+
   if (authed === null)
     return <div className="p-6 text-center" style={{ color: 'var(--text-muted)' }}>Loading…</div>;
   if (authed === false) return <PasswordGate onSuccess={loadData} />;
@@ -110,17 +168,29 @@ export default function App() {
         style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}
       >
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-xl font-semibold">Weekends {displayYear}</h1>
-          <div className="hidden md:block flex-1 px-4">
-            <CategoryLegend
-              theme={theme}
-              selected={filter}
-              onToggle={toggleFilter}
-              showSchoolHolidays={showSchoolHolidays}
-              onToggleSchoolHolidays={() => setShowSchoolHolidays((v) => !v)}
-              onClear={() => setFilter(new Set())}
-            />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => goto('calendar')}
+              className="text-xl font-semibold"
+              style={{ color: 'var(--text)' }}
+            >
+              Weekends
+            </button>
+            <NavButton active={page === 'ice'} onClick={() => goto('ice')} label="Ice" />
+            <NavButton active={page === 'bday'} onClick={() => goto('bday')} label="Bday" />
           </div>
+          {page === 'calendar' && (
+            <div className="hidden md:block flex-1 px-4">
+              <CategoryLegend
+                theme={theme}
+                selected={filter}
+                onToggle={toggleFilter}
+                showSchoolHolidays={showSchoolHolidays}
+                onToggleSchoolHolidays={() => setShowSchoolHolidays((v) => !v)}
+                onClear={() => setFilter(new Set())}
+              />
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <button
               onClick={toggleTheme}
@@ -131,26 +201,30 @@ export default function App() {
             >
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
-            <button
-              onClick={() => setModalDate(ymd(today))}
-              className="rounded-full w-10 h-10 flex items-center justify-center text-2xl leading-none"
-              style={{ background: 'var(--primary)', color: 'var(--primary-fg)' }}
-              aria-label="Add event"
-            >
-              +
-            </button>
+            {page === 'calendar' && (
+              <button
+                onClick={() => setModalDate(ymd(today))}
+                className="rounded-full w-10 h-10 flex items-center justify-center text-2xl leading-none"
+                style={{ background: 'var(--primary)', color: 'var(--primary-fg)' }}
+                aria-label="Add event"
+              >
+                +
+              </button>
+            )}
           </div>
         </div>
-        <div className="md:hidden mt-2 overflow-x-auto">
-          <CategoryLegend
-            theme={theme}
-            selected={filter}
-            onToggle={toggleFilter}
-            showSchoolHolidays={showSchoolHolidays}
-            onToggleSchoolHolidays={() => setShowSchoolHolidays((v) => !v)}
-            onClear={() => setFilter(new Set())}
-          />
-        </div>
+        {page === 'calendar' && (
+          <div className="md:hidden mt-2 overflow-x-auto">
+            <CategoryLegend
+              theme={theme}
+              selected={filter}
+              onToggle={toggleFilter}
+              showSchoolHolidays={showSchoolHolidays}
+              onToggleSchoolHolidays={() => setShowSchoolHolidays((v) => !v)}
+              onClear={() => setFilter(new Set())}
+            />
+          </div>
+        )}
       </header>
       <main className="flex-1">
         {error && (
@@ -159,18 +233,14 @@ export default function App() {
             <div className="text-sm mt-1">{error}</div>
           </div>
         )}
-        {!error && (
+        {!error && page === 'calendar' && (
           <>
             <YearGrid
-              year={displayYear}
               events={visibleEvents}
               schoolHolidays={visibleHolidays}
               theme={theme}
               onAddClick={(d) => setModalDate(d)}
-              onEventClick={(id) => {
-                const ev = events.find((x) => x.id === id);
-                if (ev) setViewEvent(ev);
-              }}
+              onEventClick={onEventClick}
             />
             <MonthView
               year={displayYear}
@@ -178,13 +248,12 @@ export default function App() {
               schoolHolidays={visibleHolidays}
               theme={theme}
               onAddClick={(d) => setModalDate(d)}
-              onEventClick={(id) => {
-                const ev = events.find((x) => x.id === id);
-                if (ev) setViewEvent(ev);
-              }}
+              onEventClick={onEventClick}
             />
           </>
         )}
+        {!error && page === 'ice' && <IcePage />}
+        {!error && page === 'bday' && <BdayPage birthdays={birthdays} onChange={setBirthdays} />}
       </main>
       {modalDate && !editingEvent && (
         <AddEventModal
@@ -216,5 +285,21 @@ export default function App() {
         />
       )}
     </div>
+  );
+}
+
+function NavButton({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className="text-xs px-2 py-1 rounded"
+      style={{
+        background: active ? 'var(--primary)' : 'var(--surface-2)',
+        color: active ? 'var(--primary-fg)' : 'var(--text)',
+        fontWeight: active ? 600 : 500,
+      }}
+    >
+      {label}
+    </button>
   );
 }
