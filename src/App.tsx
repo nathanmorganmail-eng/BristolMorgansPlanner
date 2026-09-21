@@ -120,23 +120,31 @@ export default function App() {
     return () => ro.disconnect();
   }, [authed]);
 
-  const loadData = () =>
-    Promise.all([fetchEvents(), fetchSchoolHolidays(), fetchBirthdays(), fetchIceGoing()])
-      .then(([ev, hol, bd, ig]) => {
-        setEvents(ev);
-        setSchoolHolidays(hol);
-        setBirthdays(bd);
-        setGoing(new Set(ig));
-        setAuthed(true);
-      })
-      .catch((e) => {
-        if (e instanceof UnauthorisedError) {
-          setAuthed(false);
-        } else {
-          setError(e.message ?? String(e));
-          setAuthed(true);
-        }
-      });
+  const loadData = async () => {
+    // Auth check runs first via events; if it 401s, show the gate.
+    try {
+      const ev = await fetchEvents();
+      setEvents(ev);
+    } catch (e) {
+      if (e instanceof UnauthorisedError) {
+        setAuthed(false);
+        return;
+      }
+      setError((e as Error).message ?? String(e));
+      setAuthed(true);
+      return;
+    }
+    // The rest are best-effort — a missing table shouldn't blank the calendar.
+    const [hol, bd, ig] = await Promise.all([
+      fetchSchoolHolidays().catch((e) => { console.warn('holidays failed', e); return []; }),
+      fetchBirthdays().catch((e) => { console.warn('birthdays failed', e); return []; }),
+      fetchIceGoing().catch((e) => { console.warn('ice_going failed', e); return [] as string[]; }),
+    ]);
+    setSchoolHolidays(hol);
+    setBirthdays(bd);
+    setGoing(new Set(ig));
+    setAuthed(true);
+  };
 
   useEffect(() => {
     loadData();
